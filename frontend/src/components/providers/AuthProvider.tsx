@@ -13,6 +13,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
 import { AUTH_TOKEN_KEY } from "@/lib/auth/storage";
 import { AUTH_LOGOUT_EVENT } from "@/lib/auth/events";
+import { mergeGuestCartIntoServer } from "@/lib/cart/mergeGuestCart";
+import { queryKeys } from "@/lib/queryKeys";
 import type { User } from "@/types/domain";
 
 type AuthContextValue = {
@@ -92,14 +94,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await apiClient.post<ApiEnvelope<AuthPayload>>("/auth/login", {
-      email,
-      password,
-    });
-    window.localStorage.setItem(AUTH_TOKEN_KEY, res.data.data.token);
-    setUser(res.data.data.user);
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const res = await apiClient.post<ApiEnvelope<AuthPayload>>("/auth/login", {
+        email,
+        password,
+      });
+      window.localStorage.setItem(AUTH_TOKEN_KEY, res.data.data.token);
+      setUser(res.data.data.user);
+      await mergeGuestCartIntoServer();
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cart });
+    },
+    [queryClient],
+  );
 
   const register = useCallback(
     async (name: string, email: string, password: string) => {
@@ -113,8 +120,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
       window.localStorage.setItem(AUTH_TOKEN_KEY, res.data.data.token);
       setUser(res.data.data.user);
+      await mergeGuestCartIntoServer();
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cart });
     },
-    [],
+    [queryClient],
   );
 
   const logout = useCallback(() => {

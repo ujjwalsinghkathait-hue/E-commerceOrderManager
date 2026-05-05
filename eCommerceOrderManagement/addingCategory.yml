@@ -1,0 +1,27 @@
+info:
+  name: addingCategory
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:5000/api/categories
+  headers:
+    - name: ""
+      value: ""
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Electronics",
+        "description": "Gadgets and accessories"
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZjRmNzQ5M2VhYjMzZDE3Y2FjM2Y2NSIsImlhdCI6MTc3Nzc0MDIzMSwiZXhwIjoxNzc4MzQ1MDMxfQ.xmISA2Q4hDa0DkL-qwfzfcS2SWg6sOOktqSzdJOmyL8
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

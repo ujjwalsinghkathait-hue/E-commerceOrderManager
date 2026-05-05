@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { fetchCart } from "@/lib/api/cart";
 import { apiClient } from "@/lib/api/client";
 import { getErrorMessage } from "@/lib/api/errorMessage";
 import { queryKeys } from "@/lib/queryKeys";
@@ -47,15 +48,7 @@ export default function CheckoutPage() {
 
   const cartQuery = useQuery({
     queryKey: queryKeys.cart,
-    queryFn: async () => {
-      const res = await apiClient.get<{
-        data: {
-          cart: { items: CartLine[] };
-          summary: { subtotal: number };
-        };
-      }>("/cart");
-      return res.data.data;
-    },
+    queryFn: fetchCart,
     enabled: ready && Boolean(user),
   });
 
@@ -94,12 +87,22 @@ export default function CheckoutPage() {
     return (
       <main className="mx-auto max-w-lg flex-1 px-4 py-16 text-center">
         <h1 className="text-xl font-semibold">Checkout</h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          <Link href="/login" className="underline">
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+          <Link
+            href="/login?next=%2Fcheckout"
+            className="font-medium underline"
+          >
             Sign in
           </Link>{" "}
-          to place an order.
+          to place an order. If you shopped as a guest, your cart merges when
+          you sign in.
         </p>
+        <Link
+          href="/cart"
+          className="mt-4 inline-block text-sm font-medium text-zinc-900 underline dark:text-zinc-100"
+        >
+          View cart
+        </Link>
       </main>
     );
   }

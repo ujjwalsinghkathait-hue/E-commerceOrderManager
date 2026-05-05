@@ -36,8 +36,11 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col font-sans">
         <AppProviders>
+          <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(37,99,235,0.14),transparent)] dark:bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(96,165,250,0.12),transparent)]" />
           <SiteHeader />
-          <div className="flex flex-1 flex-col">{children}</div>
+          <div className="flex flex-1 flex-col bg-gradient-to-b from-transparent via-zinc-50/80 to-zinc-100/90 dark:via-zinc-950/80 dark:to-zinc-950">
+            {children}
+          </div>
           <SiteFooter />
         </AppProviders>
       </body>

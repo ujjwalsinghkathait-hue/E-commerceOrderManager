@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
+import { ProductImage } from "@/components/media/ProductImage";
+import { addGuestCartLine } from "@/lib/cart/guestCartStorage";
+import { getSafeNextPath } from "@/lib/auth/safeNextPath";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import type { Product } from "@/types/domain";
@@ -63,80 +66,113 @@ export default function ProductDetailPage() {
     p.category && typeof p.category === "object" ? p.category.name : "—";
 
   return (
-    <main className="mx-auto grid w-full max-w-5xl flex-1 gap-8 px-4 py-10 md:grid-cols-2">
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+    <main className="mx-auto grid w-full max-w-5xl flex-1 gap-10 px-4 py-10 md:grid-cols-2 md:gap-12 md:py-14">
+      <div className="group relative overflow-hidden rounded-3xl border border-zinc-200/90 bg-gradient-to-br from-zinc-100 to-zinc-200 shadow-xl shadow-zinc-900/10 ring-1 ring-black/[0.04] dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-800 dark:shadow-black/40 dark:ring-white/[0.06]">
         {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={image}
-            alt={p.name}
-            className="h-full w-full object-cover"
-          />
+          <div className="relative aspect-square w-full">
+            <ProductImage
+              src={image}
+              alt={p.name}
+              fill
+              className="object-cover transition duration-700 ease-out group-hover:scale-[1.03]"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
+            />
+          </div>
         ) : (
-          <div className="flex aspect-square items-center justify-center text-sm text-zinc-500">
+          <div className="flex aspect-square flex-col items-center justify-center gap-2 text-sm text-zinc-500">
+            <span className="text-4xl opacity-30">◇</span>
             No image
           </div>
         )}
       </div>
-      <div className="space-y-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+      <div className="flex flex-col space-y-5 animate-fade-up">
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">
           {categoryName}
         </p>
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-4xl">
           {p.name}
         </h1>
-        <p className="text-2xl font-bold">${p.price.toFixed(2)}</p>
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">
-          SKU: {p.sku} · Stock: {p.stock}
+        <p className="text-3xl font-bold tabular-nums text-zinc-900 dark:text-white">
+          ${p.price.toFixed(2)}
+        </p>
+        <p className="rounded-xl bg-zinc-100 px-3 py-2 text-sm text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+          <span className="font-medium">SKU</span> {p.sku} ·{" "}
+          <span className="font-medium">Stock</span> {p.stock}
         </p>
         <Card>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-700 dark:text-zinc-200">
             {p.description || "No description provided."}
           </p>
         </Card>
-        {ready && user ? (
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <label
-                htmlFor="qty"
-                className="text-xs font-medium text-zinc-600 dark:text-zinc-400"
+        {ready && (
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <label
+                  htmlFor="qty"
+                  className="text-xs font-medium text-zinc-600 dark:text-zinc-400"
+                >
+                  Qty
+                </label>
+                <Input
+                  id="qty"
+                  type="number"
+                  min={1}
+                  max={Math.max(1, p.stock)}
+                  className="mt-1 w-24"
+                  value={qty}
+                  onChange={(e) =>
+                    setQty(
+                      Math.min(
+                        Math.max(1, Number(e.target.value) || 1),
+                        Math.max(1, p.stock),
+                      ),
+                    )
+                  }
+                />
+              </div>
+              <Button
+                type="button"
+                disabled={
+                  p.stock < 1 ||
+                  (Boolean(user) && addMutation.isPending)
+                }
+                onClick={() => {
+                  if (user) {
+                    addMutation.mutate();
+                  } else {
+                    addGuestCartLine(p._id, qty, p.stock);
+                  }
+                }}
               >
-                Qty
-              </label>
-              <Input
-                id="qty"
-                type="number"
-                min={1}
-                max={Math.max(1, p.stock)}
-                className="mt-1 w-24"
-                value={qty}
-                onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
-              />
+                {user && addMutation.isPending ? "Adding…" : "Add to cart"}
+              </Button>
+              {user && addMutation.isError && (
+                <p className="text-sm text-red-600">
+                  {getErrorMessage(addMutation.error)}
+                </p>
+              )}
             </div>
-            <Button
-              type="button"
-              disabled={p.stock < 1 || addMutation.isPending}
-              onClick={() => addMutation.mutate()}
-            >
-              {addMutation.isPending ? "Adding…" : "Add to cart"}
-            </Button>
-            {addMutation.isError && (
-              <p className="text-sm text-red-600">
-                {getErrorMessage(addMutation.error)}
+            {!user && (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Saved on this device until you{" "}
+                <Link
+                  href={`/login?next=${encodeURIComponent(
+                    getSafeNextPath(`/products/${id}`),
+                  )}`}
+                  className="font-medium underline"
+                >
+                  sign in
+                </Link>{" "}
+                (we merge your guest cart into your account).
               </p>
             )}
           </div>
-        ) : (
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            <Link href="/login" className="font-medium underline">
-              Sign in
-            </Link>{" "}
-            to add this product to your cart.
-          </p>
         )}
         <Link
           href="/"
-          className="inline-block text-sm font-medium text-zinc-600 underline dark:text-zinc-400"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 transition hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
         >
           ← Back to catalog
         </Link>

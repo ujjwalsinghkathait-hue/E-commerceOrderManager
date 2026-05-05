@@ -11,6 +11,8 @@ cp .env.example .env.local
 
 Set `NEXT_PUBLIC_API_URL` to your API base **including `/api`**, e.g. `http://localhost:5000/api`. The backend must allow this app’s origin in **`CLIENT_ORIGIN`** (CORS).
 
+Optional: **`NEXT_PUBLIC_IMAGE_HOSTS`** — comma-separated hostnames (e.g. `cdn.example.com`) so product image URLs on those hosts use `next/image` optimization. Built-in defaults include Unsplash, Picsum, `placehold.co`, and Google user content; other URLs still load via a plain `<img>` with lazy loading.
+
 ## Scripts
 
 | Command | Description |
